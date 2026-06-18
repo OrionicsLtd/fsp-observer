@@ -193,6 +193,13 @@ def get_config() -> Configuration:
         os.environ.get("SUPPRESS_FTSO_MISSING_FEED", "false").lower() == "true"
     )
 
+    # how many blocks to look back when estimating average block time. Lower this
+    # (e.g. to a few thousand) when running against a state-synced node that only
+    # retains recent history.
+    block_production_lookback = int(
+        os.environ.get("BLOCK_PRODUCTION_LOOKBACK", "1000000")
+    )
+
     config = Configuration(
         rpc_url=rpc_url,
         p_chain_rpc_url=p_chain_rpc_url,
@@ -207,6 +214,7 @@ def get_config() -> Configuration:
         max_block_range=max_block_range,
         false_positive_threshold=false_positive_threshold,
         suppress_ftso_missing_feed=suppress_ftso_missing_feed,
+        block_production_lookback=block_production_lookback,
     )
 
     return config

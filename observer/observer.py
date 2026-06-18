@@ -191,11 +191,14 @@ def calculate_update_from_tx(config: Configuration, w: AsyncWeb3, tx: TxData):
     return signing_policy_address, address, signed_array
 
 
-async def get_block_production(w: AsyncWeb3) -> float:
+async def get_block_production(w: AsyncWeb3, lookback: int) -> float:
     latest_block = await w.eth.get_block("latest")
     assert "timestamp" in latest_block
     assert "number" in latest_block
-    to_compare = min(1_000_000, int(latest_block["number"]) - 1)
+    # State-synced nodes only retain recent history, so the lookback window is
+    # configurable (BLOCK_PRODUCTION_LOOKBACK). Block time is stable, so a smaller
+    # window still gives an accurate estimate.
+    to_compare = min(lookback, int(latest_block["number"]) - 1)
     comparison_block = await w.eth.get_block(int(latest_block["number"]) - to_compare)
     assert "timestamp" in comparison_block
     time_delta = latest_block["timestamp"] - comparison_block["timestamp"]
@@ -611,7 +614,7 @@ async def observer_loop(config: Configuration) -> None:
 
     # block production rate differs per chain, so measure it and reuse it both to
     # locate the registration blocks and to size the fast updates exponent window
-    block_production = await get_block_production(w)
+    block_production = await get_block_production(w, config.block_production_lookback)
     maximum_exponent = calculate_maximum_exponent(block_production, config)
 
     LOGGER.debug(
